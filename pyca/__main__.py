@@ -2,33 +2,53 @@
 
 import looper
 import config
+import geminiAPI
+import geminiBuyDCAPostOnly
+from __init__ import GLOBAL_VARS
 
+import datetime
 
-cfgAPI=None
+geminiClient = None
+geminiBuyRule = None
 
 def main():
-	print("==loading config==")
+    print("start time:"+str(datetime.datetime.now()))
+    
+    print("===TODO: COPYING NOTICE===")
+    
+    print("===loading config===")
+    
+    GLOBAL_VARS.printMe()
 
-	global cfgGeminiAPI
-	global cfgGeminiBuyDCAPostOnly
+    global geminiClient
+    geminiClient = geminiAPI.getGeminiAPI(True)  #TODO: put sandbox variable somewhere else
+    geminiClient.printMe()
+    
+    global geminiBuyRule
+    geminiBuyRule = geminiBuyDCAPostOnly.getGeminiBuyDCAPostOnly(True)  #TODO: put sandbox variable somewhere else
+    geminiBuyRule.printMe()
 
-	cfgAPI = config.getConfigGeminiAPI(True)
-	cfgSettings = config.getConfigGeminiBuyDCAPostOnly(True)
+    print("===starting rules===")
+    print("")
+    
+    looper.loop(interval_seconds=GLOBAL_VARS.SECONDS_PER_TICK,execute_function=doRules)
+    
+    print("===program end===")
 
-	cfgAPI.printme()
-	cfgSettings.printme()
-
-	print("==starting==")
-	looper.loop(interval_seconds=6.0,execute_function=doRules)
 
 def doRules():
-	print('rules go here')
-	if(cfgSettings.PurchasesPerDay>0):
-		pass
-		#increment amount
-		#do purchase sometime, but check balance first	
+    print("==executing rules==")
+    #geminiPurchasesPerDay = float(cfgGeminiBuyDCAPostOnly.PurchasesPerDay)
+    #geminiPurchaseQuantityPerDayInFiat = float(cfgGeminiBuyDCAPostOnly.PurchaseQuantityPerDayInFiat)
+    
+    print("=GeminiBuyDCAPostOnly=")
+    geminiBuyRule.doRule()
 
+
+    print("==rules complete==")
+    print("")
 
 main()
+
 
 

@@ -1,30 +1,11 @@
 import configparser
 import os
 import sys
-
-class ConfigGeminiAPI:
-	def __init__(self, _API_KEY, _API_SECRET):
-		self.API_KEY = _API_KEY
-		self.API_SECRET = _API_SECRET
-	
-	def printme(self):
-		print("==ConfigAPI==")	
-		print("API_KEY:"+self.API_KEY)
-		#print("API_SECRET:"+self.API_SECRET)
-	
-class ConfigGeminiBuyDCAPostOnly:
-	def __init__(self, _PurchasesPerDay, _PurchaseQuantityPerDayInFiat, _PurchaseSymbol):
-		self.PurchasesPerDay = _PurchasesPerDay
-		self.PurchaseQuantityPerDayInFiat = _PurchaseQuantityPerDayInFiat
-		self.PurchaseSymbol = _PurchaseSymbol
-	
-	def printme(self):
-		print("==ConfigGeminiBuyDCAPostOnly==")
-		print("PurchasesPerDay:"+self.PurchasesPerDay)
-		print("PurchaseQuantityPerDayInFiat:"+self.PurchaseQuantityPerDayInFiat)
-		print("PurchaseSymbol:"+self.PurchaseSymbol)
+from geminiAPI import GeminiAPI
+from geminiBuyDCAPostOnly import GeminiBuyDCAPostOnly	
 
 
+		
 def createExampleConfig():
 	exConfig = configparser.RawConfigParser()
         	
@@ -59,23 +40,8 @@ def getConfig(isSandbox):
 
 	return config
 
-def getConfigGeminiAPI(isSandbox):
-	config = getConfig(isSandbox)
 
-	API_KEY = config.get('APIKeys', 'API_KEY')
-	API_SECRET = config.get('APIKeys', 'API_SECRET')
-	
-	cfg = ConfigAPI(API_KEY,API_SECRET)
-	return cfg
         	
-def getConfigGeminiBuyPostOnly(isSandbox):
-	config = getConfig(isSandbox)
 
-	PurchasesPerDay = config.get('GeminiBuyDCAPostOnly', 'PurchasesPerDay')
-	PurchaseQuantityPerDayInFiat = config.get('GeminiBuyDCAPostOnly', 'PurchaseQuantityPerDayInFiat')
-	PurchaseSymbol = config.get('GeminiBuyDCAPostOnly', 'PurchaseSymbol')
-
-	cfg = ConfigGeminiBuyDCAPostOnly(PurchasesPerDay, PurchaseQuantityPerDayInFiat, PurchaseSymbol)
-	return cfg
 
 

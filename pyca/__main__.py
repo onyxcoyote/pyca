@@ -5,11 +5,15 @@ import config
 import geminiAPI
 import geminiBuyDCAPostOnly
 from __init__ import GLOBAL_VARS
+#from __init__ import VARS
+
 
 import datetime
 
 geminiClient = None
 geminiBuyRule = None
+
+
 
 def main():
     print("start time:"+str(datetime.datetime.now()))
@@ -18,14 +22,15 @@ def main():
     
     print("===loading config===")
     
+    
     GLOBAL_VARS.printMe()
 
     global geminiClient
-    geminiClient = geminiAPI.getGeminiAPI(True)  #TODO: put sandbox variable somewhere else
+    geminiClient = geminiAPI.getGeminiAPI()
     geminiClient.printMe()
     
     global geminiBuyRule
-    geminiBuyRule = geminiBuyDCAPostOnly.getGeminiBuyDCAPostOnly(True)  #TODO: put sandbox variable somewhere else
+    geminiBuyRule = geminiBuyDCAPostOnly.getGeminiBuyDCAPostOnly()
     geminiBuyRule.printMe()
 
     print("===starting rules===")

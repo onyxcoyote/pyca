@@ -1,13 +1,14 @@
 import config
 import gemini.client
 
-def getGeminiAPI(isSandbox):
-    configFile = config.getConfig(isSandbox)
+def getGeminiAPI():
+    configFile = config.getConfig()
 
     API_KEY = configFile.get('GeminiAPIKeys', 'API_KEY')
     API_SECRET = configFile.get('GeminiAPIKeys', 'API_SECRET')
+    IS_SANDBOX = configFile.get('GeminiAPIKeys', 'is_sandbox')
 
-    cfg = GeminiAPI(API_KEY,API_SECRET,isSandbox)
+    cfg = GeminiAPI(API_KEY,API_SECRET,IS_SANDBOX)
     return cfg
 
 class GeminiAPI:

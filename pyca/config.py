@@ -12,24 +12,27 @@ def createExampleConfig():
 	exConfig.add_section('GeminiAPIKeys')
 	exConfig.set('GeminiAPIKeys', 'API_KEY', 'abcd1234')
 	exConfig.set('GeminiAPIKeys', 'API_SECRET', 'QRZXabcd1234')
+	exConfig.set('GeminiAPIKeys', 'is_sandbox', 'True')
 
 	exConfig.add_section('GeminiBuyDCAPostOnly')
 	exConfig.set('GeminiBuyDCAPostOnly', 'PurchasesPerDay', 1.0)
 	exConfig.set('GeminiBuyDCAPostOnly', 'PurchaseQuantityPerDayInFiat', 10.0)
 	exConfig.set('GeminiBuyDCAPostOnly', 'PurchaseSymbol', 'btcusd')
+	exConfig.set('GeminiBuyDCAPostOnly','HardMaximumCoinPrice','8000')
+	exConfig.set('GeminiBuyDCAPostOnly','NumberOfMinutesToConsiderOrderStale','120')
+	exConfig.set('GeminiBuyDCAPostOnly','ChanceToProceedOnPurchasePerTick','0.05')
+	exConfig.set('GeminiBuyDCAPostOnly','DesiredDiscount','0.10')
+	
+	
 
 	with open('example.cfg', 'w') as cfgFile:
 		exConfig.write(cfgFile)
 
-def getConfig(isSandbox):
+#def getConfig(isSandbox):
+def getConfig():
 	config = configparser.RawConfigParser()
 
-	if(not isSandbox):
-		filename = 'prod.cfg'
-		config.read('prod.cfg')	
-	else:
-		filename = 'sandbox.cfg'
-		config.read('sandbox.cfg')	
+	filename = 'pyca.cfg'
 
 	if(os.path.isfile(filename)):
 		config.read(filename)
@@ -41,7 +44,7 @@ def getConfig(isSandbox):
 	return config
 
 
-        	
-
+def isSandbox():
+    return True  #todo
 
 

@@ -1,4 +1,6 @@
 __pycache__
-sandbox.cfg
 sandboxtest.py
+*.cfg
 prod.cfg
+pyca.cfg
+sandbox.cfg

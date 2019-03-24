@@ -27,12 +27,13 @@ def getGeminiBuyDCAPostOnly():
     ChanceToProceedOnPurchasePerTick = float(configFile.get('GeminiBuyDCAPostOnly', 'ChanceToProceedOnPurchasePerTick'))
     MaxDaysCatchup = float(configFile.get('GeminiBuyDCAPostOnly', 'MaxDaysCatchup'))  #recommended to be at least 1.5 to catch up in case of maintenance windows up to 12 hours.
     DesiredDiscount = float(configFile.get('GeminiBuyDCAPostOnly', 'DesiredDiscount'))
+    StartingProgressForFirstPurchase = float(configFile.get('GeminiBuyDCAPostOnly', 'StartingProgressForFirstPurchase'))
 
-    cfg = GeminiBuyDCAPostOnly(_PurchasesPerDay=PurchasesPerDay, _PurchaseQuantityPerDayInFiat=PurchaseQuantityPerDayInFiat, _PurchaseSymbol=PurchaseSymbol, _HardMaximumCoinPrice=HardMaximumCoinPrice, _NumberOfMinutesToConsiderOrderStale=NumberOfMinutesToConsiderOrderStale, _ChanceToProceedOnPurchasePerTick=ChanceToProceedOnPurchasePerTick, _MaxDaysCatchup=MaxDaysCatchup, _DesiredDiscount=DesiredDiscount)
+    cfg = GeminiBuyDCAPostOnly(_PurchasesPerDay=PurchasesPerDay, _PurchaseQuantityPerDayInFiat=PurchaseQuantityPerDayInFiat, _PurchaseSymbol=PurchaseSymbol, _HardMaximumCoinPrice=HardMaximumCoinPrice, _NumberOfMinutesToConsiderOrderStale=NumberOfMinutesToConsiderOrderStale, _ChanceToProceedOnPurchasePerTick=ChanceToProceedOnPurchasePerTick, _MaxDaysCatchup=MaxDaysCatchup, _DesiredDiscount=DesiredDiscount, _StartingProgressForFirstPurchase=StartingProgressForFirstPurchase)
     return cfg
 
 class GeminiBuyDCAPostOnly:
-    def __init__(self, _PurchasesPerDay, _PurchaseQuantityPerDayInFiat, _PurchaseSymbol, _HardMaximumCoinPrice, _NumberOfMinutesToConsiderOrderStale, _ChanceToProceedOnPurchasePerTick, _MaxDaysCatchup,  _DesiredDiscount, _StartingProgressForFirstPurchase = 0.99995):
+    def __init__(self, _PurchasesPerDay, _PurchaseQuantityPerDayInFiat, _PurchaseSymbol, _HardMaximumCoinPrice, _NumberOfMinutesToConsiderOrderStale, _ChanceToProceedOnPurchasePerTick, _MaxDaysCatchup,  _DesiredDiscount, _StartingProgressForFirstPurchase):
         self.PurchasesPerDay = float(_PurchasesPerDay)
         self.PurchaseQuantityPerDayInFiat = float(_PurchaseQuantityPerDayInFiat)
         self.PurchaseSymbol = str(_PurchaseSymbol)
@@ -42,7 +43,7 @@ class GeminiBuyDCAPostOnly:
         self.DesiredDiscount = _DesiredDiscount  #uses a lower purchase price based on percent value.  The more the discount, the less likely the purchase will go through soon (or at all).
         self.HardMaximumCoinPrice = float(_HardMaximumCoinPrice)
         self.ProcessActiveOrdersFrequencyPerDay = (24*(60/5))  #every 5 minutes
-        # _StartingProgressForFirstPurchase  #this value speeds up the first purchase
+        self.StartingProgressForFirstPurchase = _StartingProgressForFirstPurchase  #this value speeds up the first purchase after starting the program
         
         if((self.PurchasesPerDay > 0) & (self.PurchaseQuantityPerDayInFiat > 0)):
             self.ProgressIncrementToPurchaseInFiatPerTick = (self.PurchaseQuantityPerDayInFiat/GLOBAL_VARS.TICKS_PER_DAY)
@@ -100,61 +101,64 @@ class GeminiBuyDCAPostOnly:
         print("PurchaseQuantityMaxInFiatPerPurchase:" + str(self.PurchaseQuantityMaxInFiatPerPurchase))
         
         print("ProgressIncrementToProcessActiveOrdersPercentPerTick:" + str(self.ProgressIncrementToProcessActiveOrdersPercentPerTick))
-        print("ProgressIncrementToProcessActiveOrdersPercentPerTick:" + str(self.CurrentProgressToProcessActiveOrders))
+        print("CurrentProgressToProcessActiveOrders:" + str(self.CurrentProgressToProcessActiveOrders))
 
     def printMinimal(self):
         print("CurrentProgressToPurchaseQuantityInFiat:" + str(round(self.CurrentProgressToPurchaseQuantityInFiat,2)) + "/" + str(self.PurchaseQuantityInFiatPerPurchase) + "  " + str(round((self.CurrentProgressToPurchaseQuantityInFiat / self.PurchaseQuantityInFiatPerPurchase) * 100, 3)) + "%.  Progress to process: " + str(round(self.CurrentProgressToProcessActiveOrders*100.0,2))+"%" )
         
     def doRule(self):        
-        #purchase rule
-        if((self.PurchasesPerDay > 0) & (self.PurchaseQuantityPerDayInFiat > 0)):
-            #increment progress to next purchase
-            self.CurrentProgressToPurchaseQuantityInFiat += self.ProgressIncrementToPurchaseInFiatPerTick
-            
-            #reduce to max if above max
-            self.checkMaxProgressToPurchase()
-            
-            
-            #increment progress to next process/resubmit
-            self.CurrentProgressToProcessActiveOrders += self.ProgressIncrementToProcessActiveOrdersPercentPerTick
-            
-            #reduce to max if above max
-            self.checkMaxProgressToProcess()
-            
-            
-            self.printMinimal()
-            
-            
-            #process/resubmit existing orders
-            if(self.CurrentProgressToProcessActiveOrders >= 1.0):
-                self.CurrentProgressToProcessActiveOrders = 0
-                self.processActivePurchaseOrders()
-                    
-            
-            #purchase
-            if(self.CurrentProgressToPurchaseQuantityInFiat >= self.PurchaseQuantityInFiatPerPurchase):
+        try:
+            #purchase rule
+            if((self.PurchasesPerDay > 0) & (self.PurchaseQuantityPerDayInFiat > 0)):
+                #increment progress to next purchase
+                self.CurrentProgressToPurchaseQuantityInFiat += self.ProgressIncrementToPurchaseInFiatPerTick
                 
-                randVal = random.random()
-                if(randVal < self.ChanceToProceedOnPurchasePerTick):
-                    proceedWithBuy = True
-                    print("random: "+ str(randVal) + " < " + str(self.ChanceToProceedOnPurchasePerTick) + " -> proceed with purchase")
-                else:
-                    proceedWithBuy = False
-                    print("random: "+ str(randVal) + " >= " + str(self.ChanceToProceedOnPurchasePerTick) + " -> random delay on purchase")
+                #reduce to max if above max
+                self.checkMaxProgressToPurchase()
+                
+                
+                #increment progress to next process/resubmit
+                self.CurrentProgressToProcessActiveOrders += self.ProgressIncrementToProcessActiveOrdersPercentPerTick
+                
+                #reduce to max if above max
+                self.checkMaxProgressToProcess()
+                
+                
+                self.printMinimal()
+                
+                
+                #process/resubmit existing orders
+                if(self.CurrentProgressToProcessActiveOrders >= 1.0):
+                    self.CurrentProgressToProcessActiveOrders = 0
+                    self.processActivePurchaseOrders()
+                        
+                
+                #purchase
+                if(self.CurrentProgressToPurchaseQuantityInFiat >= self.PurchaseQuantityInFiatPerPurchase):
                     
-                if(proceedWithBuy):
-                    #do purchase (if applicable)
-                    try:
-                        print("executing purchase, fiat quantity: " + str(round(self.CurrentProgressToPurchaseQuantityInFiat,2)))
-                        self.doNewPurchase()
-                    except Exception as e:
-                        print("GeminiBuyDCAPostOnly - Error: " + str(e) + ". Traceback: " + str(traceback.print_tb(e.__traceback__)))
-                    
-                    self.CurrentProgressToPurchaseQuantityInFiat = 0
-                else:
-                    #print("random delay on purchase")
-                    pass            
-        pass
+                    randVal = random.random()
+                    if(randVal < self.ChanceToProceedOnPurchasePerTick):
+                        proceedWithBuy = True
+                        print("random: "+ str(randVal) + " < " + str(self.ChanceToProceedOnPurchasePerTick) + " -> proceed with purchase")
+                    else:
+                        proceedWithBuy = False
+                        print("random: "+ str(randVal) + " >= " + str(self.ChanceToProceedOnPurchasePerTick) + " -> random delay on purchase")
+                        
+                    if(proceedWithBuy):
+                        #do purchase (if applicable)
+                        try:
+                            print("executing purchase, fiat quantity: " + str(round(self.CurrentProgressToPurchaseQuantityInFiat,2)))
+                            self.doNewPurchase()
+                        except Exception as e:
+                            print("GeminiBuyDCAPostOnly - Error: " + str(e) + ". Traceback: " + str(traceback.print_tb(e.__traceback__)))
+                        
+                        self.CurrentProgressToPurchaseQuantityInFiat = 0
+                    else:
+                        #print("random delay on purchase")
+                        pass            
+            pass
+        except Exception as e:
+            print(str(e))
     
     def getTickerBid(self):
         result = __main__.geminiClient.client.get_ticker(self.PurchaseSymbol)   #API call
@@ -165,6 +169,7 @@ class GeminiBuyDCAPostOnly:
 
     #resubmits stale orders at a worse price
     def processActivePurchaseOrders(self):
+        #TODO ADD TRY CATCH
 
         orderTimeoutTimedelta = datetime.timedelta(minutes=self.NumberOfMinutesToConsiderOrderStale)
         
@@ -214,6 +219,8 @@ class GeminiBuyDCAPostOnly:
     
     #re-submits purchase order at a higher price (but not higher than the best bid)
     def resubmitPurchase(self, _orderObj):
+        #TODO ADD TRY CATCH
+        
         orderId = _orderObj["id"]
         clientOrderId = clientOrderIdObj(str(_orderObj["client_order_id"]))
         oldOrderDateTime = clientOrderId.getOrderDateTimeFromOrderId()

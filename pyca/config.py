@@ -22,6 +22,7 @@ def createExampleConfig():
 	exConfig.set('GeminiBuyDCAPostOnly','NumberOfMinutesToConsiderOrderStale','120')
 	exConfig.set('GeminiBuyDCAPostOnly','ChanceToProceedOnPurchasePerTick','0.05')
 	exConfig.set('GeminiBuyDCAPostOnly','DesiredDiscount','0.10')
+	exConfig.set('GeminiBuyDCAPostOnly','StartingProgressForFirstPurchase','0.60')
 	
 	
 
@@ -46,5 +47,6 @@ def getConfig():
 
 def isSandbox():
     return True  #todo
+
 
 

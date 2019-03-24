@@ -22,7 +22,6 @@ def main():
     
     print("===loading config===")
     
-    
     GLOBAL_VARS.printMe()
 
     global geminiClient
@@ -42,16 +41,19 @@ def main():
 
 
 def doRules():
-    print("==executing rules==")
-    #geminiPurchasesPerDay = float(cfgGeminiBuyDCAPostOnly.PurchasesPerDay)
-    #geminiPurchaseQuantityPerDayInFiat = float(cfgGeminiBuyDCAPostOnly.PurchaseQuantityPerDayInFiat)
-    
-    print("=GeminiBuyDCAPostOnly=")
-    geminiBuyRule.doRule()
+    try:    
+        print("==executing rules== " + str(datetime.datetime.now()))
+        #geminiPurchasesPerDay = float(cfgGeminiBuyDCAPostOnly.PurchasesPerDay)
+        #geminiPurchaseQuantityPerDayInFiat = float(cfgGeminiBuyDCAPostOnly.PurchaseQuantityPerDayInFiat)
+        
+        print("=GeminiBuyDCAPostOnly=")
+        geminiBuyRule.doRule()
 
 
-    print("==rules complete==")
-    print("")
+        print("==rules complete==" + str(datetime.datetime.now()))
+        print
+    except Exception as e:
+        print(str(e))
 
 main()
 

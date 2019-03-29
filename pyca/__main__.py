@@ -21,7 +21,7 @@ def main():
     print("===TODO: COPYING NOTICE===")
     
     print("===loading config===")
-    
+
     GLOBAL_VARS.printMe()
 
     global geminiClient

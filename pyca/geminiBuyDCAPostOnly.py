@@ -1,3 +1,4 @@
+import time
 import random
 import traceback
 import uuid
@@ -149,10 +150,11 @@ class GeminiBuyDCAPostOnly:
                         try:
                             print("executing purchase, fiat quantity: " + str(round(self.CurrentProgressToPurchaseQuantityInFiat,2)))
                             self.doNewPurchase()
+                            self.CurrentProgressToPurchaseQuantityInFiat = 0
                         except Exception as e:
                             print("GeminiBuyDCAPostOnly - Error: " + str(e) + ". Traceback: " + str(traceback.print_tb(e.__traceback__)))
+                            time.sleep(60)
                         
-                        self.CurrentProgressToPurchaseQuantityInFiat = 0
                     else:
                         #print("random delay on purchase")
                         pass            
@@ -169,7 +171,6 @@ class GeminiBuyDCAPostOnly:
 
     #resubmits stale orders at a worse price
     def processActivePurchaseOrders(self):
-        #TODO ADD TRY CATCH
 
         orderTimeoutTimedelta = datetime.timedelta(minutes=self.NumberOfMinutesToConsiderOrderStale)
         
@@ -198,8 +199,12 @@ class GeminiBuyDCAPostOnly:
 
                 
                 if(clientOrderId.isOrderStale(oldestAllowedDateTime)):
-                    print(" order status: stale")                    
-                    self.resubmitPurchase(order)     #note: if order is expire, cut the "discount in half" keep repeating until the price is reasonable.  With 12-15 halvings, the discount would reduce to almost nothing, but would try to buy at better prices first
+                    print(" order status: stale")   
+                    try:
+                        self.resubmitPurchase(order)     #note: if order is expire, cut the "discount in half" keep repeating until the price is reasonable.  With 12-15 halvings, the discount would reduce to almost nothing, but would try to buy at better prices first
+                    except Exception as e:
+                        print(str(e))
+                        time.sleep(60)
                 else:
                     print(" order status: fresh")
         pass
@@ -219,7 +224,6 @@ class GeminiBuyDCAPostOnly:
     
     #re-submits purchase order at a higher price (but not higher than the best bid)
     def resubmitPurchase(self, _orderObj):
-        #TODO ADD TRY CATCH
         
         orderId = _orderObj["id"]
         clientOrderId = clientOrderIdObj(str(_orderObj["client_order_id"]))
@@ -243,7 +247,7 @@ class GeminiBuyDCAPostOnly:
         bidValueCostPerCoin = self.getTickerBid()
         pricePerCoin = bidValueCostPerCoin * (1.0000-discount) 
         pricePerCoin = round(pricePerCoin,2)
-        print("bid price:" + str(pricePerCoin) + " discount: " + str(discount))
+        print("bid price:" + str(pricePerCoin) + " discount: " + str(discount) + " attemptNumber:" + str(clientOrderId.attemptNumber) )
         if(pricePerCoin > self.HardMaximumCoinPrice):
             raise AssertionError("GeminiBuyDCAPostOnly coin price exceeds hard maximum")
                 
@@ -259,8 +263,13 @@ class GeminiBuyDCAPostOnly:
             print("purchase quantity is too low (below 0.00001), not re-submitting")
             return
         
-        result = __main__.geminiClient.client.new_order(client_order_id=clientOrderId.getOrderId(), symbol=self.PurchaseSymbol, amount=str(coinQuantity), price=str(pricePerCoin), side='buy', type='exchange limit', options=ORDER_OPTIONS)  #API call        
-        print("purchase order result: " + str(result))
+        try:
+            result = __main__.geminiClient.client.new_order(client_order_id=clientOrderId.getOrderId(), symbol=self.PurchaseSymbol, amount=str(coinQuantity), price=str(pricePerCoin), side='buy', type='exchange limit', options=ORDER_OPTIONS)  #API call        
+            print("purchase order result: " + str(result))
+        except Exception as e:
+            print(str(e))
+            time.sleep(60)            
+
 
     def doNewPurchase(self):
 
@@ -288,12 +297,15 @@ class GeminiBuyDCAPostOnly:
 
         #note
         print("estimated cost in fiat:" + str(pricePerCoin*coinQuantity))
-        
-        
-        #example: ORDER_OPTIONS=['maker-or-cancel']        
-        #place buy order                                                                                                                                                                                                                                                                                                                  
-        result = __main__.geminiClient.client.new_order(client_order_id=clientOrderId.getOrderId(), symbol=self.PurchaseSymbol, amount=str(coinQuantity), price=str(pricePerCoin), side='buy', type='exchange limit', options=ORDER_OPTIONS)  #API call
-        print(" purchase result: " + str(result))  
+            
+        try:            
+            #example: ORDER_OPTIONS=['maker-or-cancel']        
+            #place buy order                                                                                                                                                                                                                                                                                                                  
+            result = __main__.geminiClient.client.new_order(client_order_id=clientOrderId.getOrderId(), symbol=self.PurchaseSymbol, amount=str(coinQuantity), price=str(pricePerCoin), side='buy', type='exchange limit', options=ORDER_OPTIONS)  #API call
+            print(" purchase result: " + str(result))  
+        except Exception as e:
+            print(str(e))
+            time.sleep(60)
     
     
 #client_order_id string format: "PYCA|"+datetime using the format ORDER_ID_DATE_FORMAT+"|"+attemptNumber+"|"+random GUID

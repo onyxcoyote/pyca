@@ -1,0 +1,2 @@
+GPL3.0
+see COPYING for text of the license(s)

@@ -1,16 +1,18 @@
 #What it does
 ------------
 Dollar-cost-average bitcoin buying bot for gemini, features:
-1. does periodic buys using only maker orders (fees for API market orders on gemini are 0.1%, as of March 2019)
+1. does periodic buys using only maker orders (fees for API maker orders on gemini are 0.1%, as of August 2019)
 2. to try to get the best price, it starts at a lower price (configurable) and gradually increases price (at a configurable time frame) by resubmitting and gradually higher price up to the current best bid
+
 	a. refreshes in relation to the current bid (in case of price going up and trade not executing) 
+
 	b. this resubmitting of trades does not lose track over system reboots
 3. configurable frequencies and amounts or purchase
 4. configurable maximum coin price above which it will not buy
 5. adds a random delay to purchase times to help mitigate adversaries predicting exact purchase times
 
 
-NOTE: This program is meant to be run on a computer or server that is generally up most of the time (because the purchase timer resets in the case of a machine reboot)
+NOTE: This program is meant to be run on a computer or server that is generally up most of the time (because the purchase timer resets in the case of a machine reboot), and for security purposes that computer would be dedicated to running this program.
 
 
 #INSTALLATION

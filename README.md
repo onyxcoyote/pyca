@@ -10,6 +10,7 @@ Dollar-cost-average bitcoin buying bot for gemini, features:
 3. configurable frequencies and amounts or purchase
 4. configurable maximum coin price above which it will not buy
 5. adds a random delay to purchase times to help mitigate adversaries predicting exact purchase times
+6. there is a hardcoded maximum value spent per day in fiat, currently 100 fiat units per day, to help mitigate against accidentally spending more than desired on cryptocurrency purchased.  This can be changed directly in the code if desired.
 
 
 NOTE: This program is meant to be run on a computer or server that is generally up most of the time (because the purchase timer resets in the case of a machine reboot), and for security purposes that computer would be dedicated to running this program.

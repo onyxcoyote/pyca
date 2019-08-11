@@ -35,10 +35,11 @@ def createExampleConfig():
 	exConfig.set('GeminiBuyDCAPostOnly', 'PurchasesPerDay', 1.0)
 	exConfig.set('GeminiBuyDCAPostOnly', 'PurchaseQuantityPerDayInFiat', 10.0)
 	exConfig.set('GeminiBuyDCAPostOnly', 'PurchaseSymbol', 'btcusd')
-	exConfig.set('GeminiBuyDCAPostOnly','HardMaximumCoinPrice','8000')
+	exConfig.set('GeminiBuyDCAPostOnly','HardMaximumCoinPrice','18000')
 	exConfig.set('GeminiBuyDCAPostOnly','NumberOfMinutesToConsiderOrderStale','120')
 	exConfig.set('GeminiBuyDCAPostOnly','ChanceToProceedOnPurchasePerTick','0.05')
 	exConfig.set('GeminiBuyDCAPostOnly','DesiredDiscount','0.10')
+	exConfig.set('GeminiBuyDCAPostOnly','MaxDaysCatchup','10')
 	exConfig.set('GeminiBuyDCAPostOnly','StartingProgressForFirstPurchase','0.60')
 	
 	

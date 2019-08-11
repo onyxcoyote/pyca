@@ -19,7 +19,7 @@ NOTE: This program is meant to be run on a computer or server that is generally 
 #INSTALLATION
 ------------
 
-##INSTALL PYTHON3 and PIP3
+##1. INSTALL PYTHON3 and PIP3
 
 ###example debian
 ```
@@ -34,7 +34,7 @@ yum install rh-python36-python
 scl enable rh-python36 bash
 ```
 
-##INSTALL PYTHON LIBRARIES (DIFFICULT WAY)
+##2a (either 2a or 2b). INSTALL PYTHON LIBRARIES (DIFFICULT WAY)
 ```
 cd /tmp
 mkdir pycabuild
@@ -61,13 +61,13 @@ git reset --hard FETCH_HEAD
 pip3 install .
 ```
 
-##INSTALL PYTHON DEPENDECIES (EASY WAY)
+##2b (either 2a or 2b). INSTALL PYTHON DEPENDECIES (EASY WAY)
 ```
 pip3 install gemini-python-unoffc requests chardet urllib3 idna certifi
 ```
 
 
-##SET UP THIS PROGRAM
+##3. SET UP THIS PROGRAM
 ###download repository
 ###e.g.
 ```
@@ -75,14 +75,14 @@ cd /tmp/pycabuild
 git clone https://github.com/onyxcoyote/pyca.git
 ```
 
-##copy all *.py files to the install location
+##4. copy all *.py files to the install location
 ```
 mkdir /srv/pyca
 cp /tmp/pycabuild/pyca/*.py /srv/pyca
-cd /src/pyca
+cd /srv/pyca
 ```
 
-##run program to generate a blank config file (pyca.cfg)
+##5. run program to generate a blank config file (pyca.cfg)
 update parameters in pyca.cfg:
 	api_key/api_secret from gemini, needs trading permissions.  Do not require session heartbeat.
 	leave is_sandbox as True for testing (gemini sandbox) or change to False to trade with actual money
@@ -90,7 +90,7 @@ update parameters in pyca.cfg:
 
 
 
-##run program manually
+##6a. run program manually
 ```
 cd /srv/pyca
 python3 .
@@ -98,6 +98,14 @@ python3 .
 
 NOTE: ideally set the program as a service so it runs automatically on startup
 
+
+##6b. run program automatically on startup using systemd, for example
+TODO: add pyca.service example 
+
+
+##7. changing parameters
+
+If parameters are changed in the pyca.cfg file, the program would need to be stopped and re-started.
 
 
 

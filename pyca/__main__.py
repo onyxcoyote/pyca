@@ -19,6 +19,7 @@ import looper
 import config
 import geminiAPI
 import geminiBuyDCAPostOnly
+import geminiSellDCAPostOnly
 from __init__ import GLOBAL_VARS
 
 
@@ -26,13 +27,15 @@ import datetime
 
 geminiClient = None
 geminiBuyRule = None
-
+geminiSellRule = None
 
 
 def main():
     print("start time:"+str(datetime.datetime.now()))
     
-    print("pyca  Copyright (C) 2019  onyxcoyote.com")
+    print("pyca")
+    print("Copyright (C) 2019  onyxcoyote.com")
+    print("GPL3.0, see LICNSE.txt")
     
     print("===loading config===")
 
@@ -45,6 +48,10 @@ def main():
     global geminiBuyRule
     geminiBuyRule = geminiBuyDCAPostOnly.getGeminiBuyDCAPostOnly()
     geminiBuyRule.printMe()
+    
+    global geminiSellRule
+    geminiSellRule = geminiSellDCAPostOnly.getGeminiSellDCAPostOnly()
+    geminiSellRule.printMe()
 
     print("===starting rules===")
     print("")
@@ -60,8 +67,13 @@ def doRules():
         #geminiPurchasesPerDay = float(cfgGeminiBuyDCAPostOnly.PurchasesPerDay)
         #geminiPurchaseQuantityPerDayInFiat = float(cfgGeminiBuyDCAPostOnly.PurchaseQuantityPerDayInFiat)
         
-        print("=GeminiBuyDCAPostOnly=")
-        geminiBuyRule.doRule()
+        if(geminiBuyRule.isEnabled()):
+            print("=GeminiBuyDCAPostOnly=")
+            geminiBuyRule.doRule()
+        
+        if(geminiSellRule.isEnabled()):
+            print("=GeminiSellDCAPostOnly=")
+            geminiSellRule.doRule()
 
 
         print("==rules complete==" + str(datetime.datetime.now()))

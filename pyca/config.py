@@ -32,15 +32,30 @@ def createExampleConfig():
 	exConfig.set('GeminiAPIKeys', 'is_sandbox', 'True')
 
 	exConfig.add_section('GeminiBuyDCAPostOnly')
-	exConfig.set('GeminiBuyDCAPostOnly', 'PurchasesPerDay', 1.0)
-	exConfig.set('GeminiBuyDCAPostOnly', 'PurchaseQuantityPerDayInFiat', 10.0)
-	exConfig.set('GeminiBuyDCAPostOnly', 'PurchaseSymbol', 'btcusd')
-	exConfig.set('GeminiBuyDCAPostOnly','HardMaximumCoinPrice','18000')
-	exConfig.set('GeminiBuyDCAPostOnly','NumberOfMinutesToConsiderOrderStale','120')
-	exConfig.set('GeminiBuyDCAPostOnly','ChanceToProceedOnPurchasePerTick','0.05')
-	exConfig.set('GeminiBuyDCAPostOnly','DesiredDiscount','0.10')
-	exConfig.set('GeminiBuyDCAPostOnly','MaxDaysCatchup','10')
-	exConfig.set('GeminiBuyDCAPostOnly','StartingProgressForFirstPurchase','0.60')
+	exConfig.set('GeminiBuyDCAPostOnly', 'Enabled', 'True')
+	exConfig.set('GeminiBuyDCAPostOnly', 'OrdersPerDay', 1.0)
+	exConfig.set('GeminiBuyDCAPostOnly', 'OrderQuantityPerDayInFiat', 10.0)
+	exConfig.set('GeminiBuyDCAPostOnly', 'TradeSymbol', 'btcusd')
+	exConfig.set('GeminiBuyDCAPostOnly', 'NumberOfMinutesToConsiderOrderStale','120')
+	exConfig.set('GeminiBuyDCAPostOnly', 'MaxDaysCatchup','10')
+	exConfig.set('GeminiBuyDCAPostOnly', 'ChanceToProceedOnOrderPerTick','0.05')
+	exConfig.set('GeminiBuyDCAPostOnly', 'StartingProgressForFirstOrder','0.60')
+	exConfig.set('GeminiBuyDCAPostOnly', 'HardMaximumCoinPrice','18000')	
+	exConfig.set('GeminiBuyDCAPostOnly', 'DesiredDiscount','0.10')
+	
+	
+	#Maybe use Trade instead of Order.  an Order is a thing and a trade is an action?
+	exConfig.add_section('GeminiSellDCAPostOnly')
+	exConfig.set('GeminiSellDCAPostOnly', 'Enabled', 'False')
+	exConfig.set('GeminiSellDCAPostOnly', 'OrdersPerDay', 1.0)
+	exConfig.set('GeminiSellDCAPostOnly', 'OrderQuantityPerDayInFiat', 10.0)
+	exConfig.set('GeminiSellDCAPostOnly', 'TradeSymbol', 'btcusd')
+    exConfig.set('GeminiSellDCAPostOnly', 'NumberOfMinutesToConsiderOrderStale','120')
+    exConfig.set('GeminiSellDCAPostOnly', 'MaxDaysCatchup','10')	
+	exConfig.set('GeminiSellDCAPostOnly', 'ChanceToProceedOnOrderPerTick','0.05')
+	exConfig.set('GeminiSellDCAPostOnly', 'StartingProgressForFirstOrder','0.60')
+	exConfig.set('GeminiSellDCAPostOnly', 'HardMinimumCoinPrice','25000')
+	exConfig.set('GeminiSellDCAPostOnly', 'DesiredPremium','0.10')
 	
 	
 
@@ -62,9 +77,6 @@ def getConfig():
 
 	return config
 
-
-def isSandbox():
-    return True  #todo
 
 
 

@@ -18,6 +18,7 @@
 import looper
 import config
 import geminiAPI
+import geminiTradeDCAPostOnly
 import geminiBuyDCAPostOnly
 import geminiSellDCAPostOnly
 from __init__ import GLOBAL_VARS
@@ -35,7 +36,7 @@ def main():
     
     print("pyca")
     print("Copyright (C) 2019  onyxcoyote.com")
-    print("GPL3.0, see LICNSE.txt")
+    print("GPL3.0, see LICENSE.txt")
     
     print("===loading config===")
 
@@ -79,7 +80,7 @@ def doRules():
         print("==rules complete==" + str(datetime.datetime.now()))
         print
     except Exception as e:
-        print(str(e))
+        print("Error: " + str(e)  + " Traceback: " + str(traceback.print_tb(e.__traceback__)))
 
 main()
 

@@ -15,22 +15,22 @@
     along with pyca.  If not, see <https://www.gnu.org/licenses/>.
 '''
 
-
+import sys
 import time
 import random
 import traceback
 import datetime
 import string
 
-
 from __init__ import GLOBAL_VARS
 import __main__
 import config
 import clientOrderIdObj
-import geminiAPIHelper
+import geminiAPIHelper  #todo: should be in the other class
+import geminiTradeDCAPostOnly
 
 
-ORDER_ID_PREFIX = "PYCA-SEL|"
+ORDER_ID_PREFIX = "PYCA-SEL|"  #TODO: move to another class and derive from trade_side
 ORDER_OPTIONS=['maker-or-cancel']
 
 
@@ -62,8 +62,9 @@ def getGeminiSellDCAPostOnly():
     cfg = GeminiSellDCAPostOnly(_Enabled=Enabled, _OrdersPerDay=OrdersPerDay, _OrderQuantityPerDayInFiat=OrderQuantityPerDayInFiat, _TradeSymbol=TradeSymbol, _HardMinimumCoinPrice=HardMinimumCoinPrice, _NumberOfMinutesToConsiderOrderStale=NumberOfMinutesToConsiderOrderStale, _ChanceToProceedOnOrderPerTick=ChanceToProceedOnOrderPerTick, _MaxDaysCatchup=MaxDaysCatchup, _DesiredPremium=DesiredPremium, _StartingProgressForFirstOrder=StartingProgressForFirstOrder)
     return cfg
 
-class GeminiSellDCAPostOnly:
+class GeminiSellDCAPostOnly(geminiTradeDCAPostOnly.GeminiTradeDCAPostOnly):
     def __init__(self, _Enabled, _OrdersPerDay, _OrderQuantityPerDayInFiat, _TradeSymbol, _HardMinimumCoinPrice, _NumberOfMinutesToConsiderOrderStale, _ChanceToProceedOnOrderPerTick, _MaxDaysCatchup,  _DesiredPremium, _StartingProgressForFirstOrder):
+        self.TradeSide = TRADE_SIDE
         self.Enabled = bool(_Enabled)
         self.OrdersPerDay = float(_OrdersPerDay)
         self.OrderQuantityPerDayInFiat = float(_OrderQuantityPerDayInFiat)
@@ -195,81 +196,8 @@ class GeminiSellDCAPostOnly:
                         pass            
             pass
         except Exception as e:
-            print(str(e))
+            print("Error: " + str(e) + " Traceback: " + str(traceback.print_tb(e.__traceback__)))
     
-
-    
-    def getPrice(self):
-        if(TRADE_SIDE=="buy"):
-            return geminiAPIHelper.getTickerBid()
-        elif(TRADE_SIDE=="sell"):
-            return geminiAPIHelper.getTickerAsk()
-        else:
-            raise ValueError('invalid TRADE_SIDE')
-    
-    def getPriceAfterDiscountOrPremium(self):
-        if(TRADE_SIDE=="buy"):
-            return bidValueCostPerCoin * (1.0000-self.DesiredDiscount)  #Buying subtracts desired discount
-        elif(TRADE_SIDE=="sell"):
-            return lastValueCostPerCoin * (1.0000+self.DesiredPremium)   #Selling adds desired premium
-        else:
-            raise ValueError('invalid TRADE_SIDE')
-
-
-    #resubmits stale orders at a worse price
-    def processActiveOrders(self):
-
-        orderTimeoutTimedelta = datetime.timedelta(minutes=self.NumberOfMinutesToConsiderOrderStale)
-        
-        oldestAllowedDateTime = datetime.datetime.now() - orderTimeoutTimedelta
-        if(GLOBAL_VARS.DETAILED_LOGGING_MODE):
-            print("oldestAllowedDateTime:"+str(oldestAllowedDateTime))
-        
-        #check previous purchases & merge previous orders if very old
-        orders =  __main__.geminiClient.client.get_active_orders()
-        
-        if(GLOBAL_VARS.DETAILED_LOGGING_MODE):
-            print(orders)
-            
-        print("# orders:"+str(len(orders)))
-        for order in orders:
-            if(ORDER_ID_PREFIX  in str(order["client_order_id"])):
-                orderId = order["id"]
-                print(" orderId:" + orderId)
-                clientOrderId = clientOrderIdObj.clientOrderIdObj(ORDER_ID_PREFIX, str(order["client_order_id"]))
-                print(" clientOrderId: " + clientOrderId.getOrderId())
-                print(" price: " + str(order["price"]))
-                print(" remaining amount: " + str(order["remaining_amount"]))
-                print(" attempt number: " + str(clientOrderId.attemptNumber))
-                #oldOrderDateTime = clientOrderId.getOrderDateTimeFromOrderId()
-                print(" oldOrderDateTime: " + str(clientOrderId.getOrderDateTimeFromOrderId()))
-
-                
-                if(clientOrderId.isOrderStale(oldestAllowedDateTime)):
-                    print(" order status: stale")   
-                    try:
-                        self.resubmitTrade(order)     #note: if order is expire, cut the "discount/premium" in half, and keep repeating until the price is reasonable.  With 12-15 halvings, the discount would reduce to almost nothing, but would try to buy at better prices first
-                    except Exception as e:
-                        print(str(e))
-                        time.sleep(60)
-                else:
-                    print(" order status: fresh")
-            else:
-                print(" not making changes to " + str(order["client_order_id"]))
-        pass
-
-    
-    def checkMaxProgressToOrder(self):
-        #reduce to max if above max
-        if(self.CurrentProgressToOrderQuantityInFiat >= self.OrderQuantityMaxInFiatPerOrder):
-            print("CurrentProgressToOrderQuantityInFiat exceeds max per order, reducing to max")
-            self.CurrentProgressToOrderQuantityInFiat = self.OrderQuantityMaxInFiatPerOrder
-    
-    def checkMaxProgressToProcess(self):
-        #reduce to max if above max
-        if(self.CurrentProgressToProcessActiveOrders >= 1.0):
-            print("CurrentProgressToOrderQuantityInFiat exceeds max per order, reducing to max")
-            self.CurrentProgressToProcessActiveOrders = 1.0
     
     #re-submits purchase order at a higher price (but not higher than the best bid)
     def resubmitTrade(self, _orderObj):
@@ -280,8 +208,7 @@ class GeminiSellDCAPostOnly:
         
         #cancel order
         print("cancelling: " + str(orderId))
-        cancelResult = lastValueCostPerCoin = __main__.geminiClient.client.cancel_order(str(orderId))  #API call
-            ##TODO: WHAT THE FUCK???
+        cancelResult = __main__.geminiClient.client.cancel_order(str(orderId))  #API call
         
         #resubmit a new order
         clientOrderId.incrementAttemptNumber()
@@ -324,7 +251,7 @@ class GeminiSellDCAPostOnly:
             result = __main__.geminiClient.client.new_order(client_order_id=clientOrderId.getOrderId(), symbol=self.TradeSymbol, amount=str(coinQuantity), price=str(pricePerCoin), side='buy', type='exchange limit', options=ORDER_OPTIONS)  #API call        
             print("purchase order result: " + str(result))
         except Exception as e:
-            print(str(e))
+            print("Error: " + str(e) + " Traceback: " + str(traceback.print_tb(e.__traceback__)))
             time.sleep(60)            
 
 
@@ -374,7 +301,7 @@ class GeminiSellDCAPostOnly:
             result = __main__.geminiClient.client.new_order(client_order_id=clientOrderId.getOrderId(), symbol=self.TradeSymbol, amount=str(coinQuantity), price=str(pricePerCoin), side=TRADE_SIDE, type='exchange limit', options=ORDER_OPTIONS)  #API call
             print(" order result: " + str(result))  
         except Exception as e:
-            print(str(e))
+            print("Error: " + str(e) + " Traceback: " + str(traceback.print_tb(e.__traceback__)))
             time.sleep(60)
     
     

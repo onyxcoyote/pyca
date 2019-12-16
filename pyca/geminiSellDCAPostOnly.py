@@ -30,10 +30,6 @@ import geminiAPIHelper  #todo: should be in the other class
 import geminiTradeDCAPostOnly
 
 
-ORDER_ID_PREFIX = "PYCA-SEL|"  #TODO: move to another class and derive from trade_side
-ORDER_OPTIONS=['maker-or-cancel']
-
-
 TRADE_SIDE='sell'
 
 
@@ -143,165 +139,11 @@ class GeminiSellDCAPostOnly(geminiTradeDCAPostOnly.GeminiTradeDCAPostOnly):
     def isEnabled(self):
         return self.Enabled
         
-    def doRule(self):        
-        try:
-            #purchase rule
-            if((self.OrdersPerDay > 0) & (self.OrderQuantityPerDayInFiat > 0)):
-                #increment progress to next purchase
-                self.CurrentProgressToOrderQuantityInFiat += self.ProgressIncrementToOrderInFiatPerTick
-                
-                #reduce to max if above max
-                self.checkMaxProgressToOrder()
-                
-                
-                #increment progress to next process/resubmit
-                self.CurrentProgressToProcessActiveOrders += self.ProgressIncrementToProcessActiveOrdersPercentPerTick
-                
-                #reduce to max if above max
-                self.checkMaxProgressToProcess()
-                
-                
-                self.printMinimal()
-                
-                
-                #process/resubmit existing orders
-                if(self.CurrentProgressToProcessActiveOrders >= 1.0):
-                    self.CurrentProgressToProcessActiveOrders = 0
-                    self.processActiveOrders()
-                        
-                
-                #purchase
-                if(self.CurrentProgressToOrderQuantityInFiat >= self.OrderQuantityInFiatPerOrder):
-                    
-                    randVal = random.random()
-                    if(randVal < self.ChanceToProceedOnOrderPerTick):
-                        proceedWithBuy = True
-                        print("random: "+ str(randVal) + " < " + str(self.ChanceToProceedOnOrderPerTick) + " -> proceed with purchase")
-                    else:
-                        proceedWithBuy = False
-                        print("random: "+ str(randVal) + " >= " + str(self.ChanceToProceedOnOrderPerTick) + " -> random delay on purchase")
-                        
-                    if(proceedWithBuy):
-                        #do purchase (if applicable)
-                        try:
-                            print("executing purchase, fiat quantity: " + str(round(self.CurrentProgressToOrderQuantityInFiat,2)))
-                            self.doNewTrade()
-                            self.CurrentProgressToOrderQuantityInFiat = 0
-                        except Exception as e:
-                            print("GeminiSellDCAPostOnly - Error: " + str(e) + ". Traceback: " + str(traceback.print_tb(e.__traceback__)))
-                            time.sleep(60)
-                        
-                    else:
-                        #print("random delay on purchase")
-                        pass            
-            pass
-        except Exception as e:
-            print("Error: " + str(e) + " Traceback: " + str(traceback.print_tb(e.__traceback__)))
     
     
-    #re-submits purchase order at a higher price (but not higher than the best bid)
-    def resubmitTrade(self, _orderObj):
-        
-        orderId = _orderObj["id"]
-        clientOrderId = clientOrderIdObj.clientOrderIdObj(str(_orderObj["client_order_id"]))
-        oldOrderDateTime = clientOrderId.getOrderDateTimeFromOrderId()
-        
-        #cancel order
-        print("cancelling: " + str(orderId))
-        cancelResult = __main__.geminiClient.client.cancel_order(str(orderId))  #API call
-        
-        #resubmit a new order
-        clientOrderId.incrementAttemptNumber()
-        clientOrderId.resetOrderDateTime()
-        
-        #calculate new discount
-        if(clientOrderId.attemptNumber >= 12):  #reduce discount/premium to exactly 0, because it's practically the same as 0 anyway, and would have a better chance of successful purchase
-            discount = 0
-        else:
-            discount = (self.DesiredPremium/clientOrderId.attemptNumber)
-        
-        #get price
-        lastValueCostPerCoin = self.getPrice()
-        
-        pricePerCoin = lastValueCostPerCoin * (1.0000-discount) 
-        pricePerCoin = round(pricePerCoin,2)
-        print("bid/ask price:" + str(pricePerCoin) + " discount/premium: " + str(discount) + " attemptNumber:" + str(clientOrderId.attemptNumber) )
-        
-        #if buy
-            #if(pricePerCoin > self.HardMaximumCoinPrice):
-                #raise AssertionError("coin price is above hard limit")
-        
-        #if sell
-        if(pricePerCoin < self.HardMinimumCoinPrice):
-            raise AssertionError("coin price is below hard limit")
-                
-        #get old quantity in fiat
-        _quantityInFiat = float(_orderObj["remaining_amount"]) * float(_orderObj["price"])
-                
-        #determine coin purchase quantity
-        coinQuantity = round(_quantityInFiat / pricePerCoin,8)  #assume 8 decimal places is max resolution on coin quantity
-        print("coinQuantity:" + str(coinQuantity))
-        
-        if(coinQuantity < 0.00001):
-            print("coinQuantity: " + str(coinQuantity))
-            print("purchase quantity is too low (below 0.00001), not re-submitting")
-            return
-        
-        try:
-            result = __main__.geminiClient.client.new_order(client_order_id=clientOrderId.getOrderId(), symbol=self.TradeSymbol, amount=str(coinQuantity), price=str(pricePerCoin), side='buy', type='exchange limit', options=ORDER_OPTIONS)  #API call        
-            print("purchase order result: " + str(result))
-        except Exception as e:
-            print("Error: " + str(e) + " Traceback: " + str(traceback.print_tb(e.__traceback__)))
-            time.sleep(60)            
-
-
-    def doNewTrade(self):
-
-        _quantityInFiat=round(self.CurrentProgressToOrderQuantityInFiat,2)
-        
-        #generate an order id
-        clientOrderId=clientOrderIdObj.clientOrderIdObj(ORDER_ID_PREFIX)
-        print(" orderId:"+clientOrderId.getOrderId())
-        
-        #get price
-        lastValueCostPerCoin = self.getPrice()
-        
-        #if buy 
-            #pricePerCoin = bidValueCostPerCoin * (1.0000-self.DesiredDiscount)  #Buying subtracts desired discount
-        #if sell
-        pricePerCoin = lastValueCostPerCoin * (1.0000+self.DesiredPremium)   #Selling adds desired premium
-        
-        pricePerCoin = round(pricePerCoin,2)
-        print(" using trade price: " + str(pricePerCoin))
-        
-        if(TRADE_SIDE=="buy"):
-            if(pricePerCoin > self.HardMaximumCoinPrice):   #BUY, check that price not above max
-                raise AssertionError("order price greater than configured maximum")
-        elif(TRADE_SIDE=="sell"):
-            if(pricePerCoin < self.HardMinimumCoinPrice):   #SELL, check that price not below minimum
-                raise AssertionError("order price less than configured minimum")
-        else:
-            raise ValueError('invalid TRADE_SIDE')
-        
-
-                
-        #determine coin order quantity
-        coinQuantity = round(_quantityInFiat / pricePerCoin,8)  #assume 8 decimal places is max resolution on coin quantity
-        print(" coinQuantity:" + str(coinQuantity))
-        
-        if(coinQuantity < 0.00001):
-            print("  coinQuantity: " + str(coinQuantity))
-            sys.exit("order quantity is too low (below 0.00001), increase order amount or decrease order frequency")
-
-        #note
-        print("estimated trade value in fiat:" + str(pricePerCoin*coinQuantity))
-            
-        try:            
-            #place order                                                                                                                                                                                                                                                                                                                  
-            result = __main__.geminiClient.client.new_order(client_order_id=clientOrderId.getOrderId(), symbol=self.TradeSymbol, amount=str(coinQuantity), price=str(pricePerCoin), side=TRADE_SIDE, type='exchange limit', options=ORDER_OPTIONS)  #API call
-            print(" order result: " + str(result))  
-        except Exception as e:
-            print("Error: " + str(e) + " Traceback: " + str(traceback.print_tb(e.__traceback__)))
-            time.sleep(60)
     
+         
+
+
+
     

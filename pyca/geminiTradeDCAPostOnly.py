@@ -61,14 +61,14 @@ class GeminiTradeDCAPostOnly:
     
     def checkMaxProgressToOrder(self):
         #reduce to max if above max
-        if(self.CurrentProgressToOrderQuantityInFiat >= self.OrderQuantityMaxInFiatPerOrder):
+        if(self.CurrentProgressToOrderQuantityInFiat > self.OrderQuantityMaxInFiatPerOrder):
             print("CurrentProgressToOrderQuantityInFiat exceeds max per order, reducing to max")
             self.CurrentProgressToOrderQuantityInFiat = self.OrderQuantityMaxInFiatPerOrder
     
     def checkMaxProgressToProcess(self):
         #reduce to max if above max
-        if(self.CurrentProgressToProcessActiveOrders >= 1.0):
-            print("CurrentProgressToOrderQuantityInFiat exceeds max per order, reducing to max")
+        if(self.CurrentProgressToProcessActiveOrders > 1.0):
+            print("CurrentProgressToProcessActiveOrders exceeds max per order, reducing to max")
             self.CurrentProgressToProcessActiveOrders = 1.0
             
             
@@ -81,7 +81,7 @@ class GeminiTradeDCAPostOnly:
         if(GLOBAL_VARS.DETAILED_LOGGING_MODE):
             print("oldestAllowedDateTime:"+str(oldestAllowedDateTime))
         
-        #check previous purchases & merge previous orders if very old
+        #check previous trades & merge previous orders if very old
         orders =  __main__.geminiClient.client.get_active_orders()
         
         if(GLOBAL_VARS.DETAILED_LOGGING_MODE):
@@ -117,9 +117,9 @@ class GeminiTradeDCAPostOnly:
 
     def doRule(self):        
         try:
-            #purchase rule
+            #trade rule
             if((self.OrdersPerDay > 0) & (self.OrderQuantityPerDayInFiat > 0)):
-                #increment progress to next purchase
+                #increment progress to next trade
                 self.CurrentProgressToOrderQuantityInFiat += self.ProgressIncrementToOrderInFiatPerTick
                 
                 #reduce to max if above max
@@ -142,21 +142,21 @@ class GeminiTradeDCAPostOnly:
                     self.processActiveOrders()
                         
                 
-                #purchase
+                #probably execute the trade
                 if(self.CurrentProgressToOrderQuantityInFiat >= self.OrderQuantityInFiatPerOrder):
                     
                     randVal = random.random()
                     if(randVal < self.ChanceToProceedOnOrderPerTick):
-                        proceedWithBuy = True
-                        print("random: "+ str(randVal) + " < " + str(self.ChanceToProceedOnOrderPerTick) + " -> proceed with purchase")
+                        proceedWithTrade = True
+                        print("random: "+ str(randVal) + " < " + str(self.ChanceToProceedOnOrderPerTick) + " -> proceed with trade")
                     else:
-                        proceedWithBuy = False
-                        print("random: "+ str(randVal) + " >= " + str(self.ChanceToProceedOnOrderPerTick) + " -> random delay on purchase")
+                        proceedWithTrade = False
+                        print("random: "+ str(randVal) + " >= " + str(self.ChanceToProceedOnOrderPerTick) + " -> random delay on trade")
                         
-                    if(proceedWithBuy):
-                        #do purchase (if applicable)
+                    if(proceedWithTrade):
+                        #do trade (if applicable)
                         try:
-                            print("executing purchase, fiat quantity: " + str(round(self.CurrentProgressToOrderQuantityInFiat,2)))
+                            print("executing trade, fiat quantity: " + str(round(self.CurrentProgressToOrderQuantityInFiat,2)))
                             self.doNewTrade()
                             self.CurrentProgressToOrderQuantityInFiat = 0
                         except Exception as e:
@@ -164,7 +164,7 @@ class GeminiTradeDCAPostOnly:
                             time.sleep(60)
                         
                     else:
-                        #print("random delay on purchase")
+                        #print("random delay on trade")
                         pass            
             pass
         except Exception as e:
@@ -173,7 +173,7 @@ class GeminiTradeDCAPostOnly:
 
 
     #Todo: The order placing code could be put in a generic gemini rule
-    #re-submits purchase order at a worse price (but not better than the best competing price)
+    #re-submits trade order at a worse price (but not better than the best competing price)
     def resubmitTrade(self, _orderObj):
         
         orderId = _orderObj["id"]
@@ -189,7 +189,7 @@ class GeminiTradeDCAPostOnly:
         clientOrderId.resetOrderDateTime()
         
         #calculate new discount
-        if(clientOrderId.attemptNumber >= 12):  #reduce discount/premium to exactly 0, because it's practically the same as 0 anyway, and would have a better chance of successful purchase
+        if(clientOrderId.attemptNumber >= 12):  #reduce discount/premium to exactly 0, because it's practically the same as 0 anyway, and would have a better chance of successful trade
             discount = 0
         else:
             discount = (self.DesiredPremium/clientOrderId.attemptNumber)
@@ -205,10 +205,12 @@ class GeminiTradeDCAPostOnly:
         #todo: refactor, duplicate of buy method
         if(self.TradeSide=="buy"):
             if(pricePerCoin > self.HardMaximumCoinPrice):   #BUY, check that price not above max
-                raise AssertionError("order price greater than configured maximum")
+                print("Order price greater than configured maximum, not doing a trade.")
+                return
         elif(self.TradeSide=="sell"):
             if(pricePerCoin < self.HardMinimumCoinPrice):   #SELL, check that price not below minimum
-                raise AssertionError("order price less than configured minimum")
+                print("Order price less than configured minimum, not doing a trade.")
+                return
         else:
             raise ValueError('invalid TradeSide')
         
@@ -217,18 +219,18 @@ class GeminiTradeDCAPostOnly:
         #get old quantity in fiat
         _quantityInFiat = float(_orderObj["remaining_amount"]) * float(_orderObj["price"])
                 
-        #determine coin purchase quantity
+        #determine coin trade quantity
         coinQuantity = round(_quantityInFiat / pricePerCoin,8)  #assume 8 decimal places is max resolution on coin quantity
         print("coinQuantity:" + str(coinQuantity))
         
         if(coinQuantity < 0.00001):
             print("coinQuantity: " + str(coinQuantity))
-            print("purchase quantity is too low (below 0.00001), not re-submitting")
+            print("trade quantity is too low (below 0.00001), not re-submitting")
             return
         
         try:
             result = __main__.geminiClient.client.new_order(client_order_id=clientOrderId.getOrderId(), symbol=self.TradeSymbol, amount=str(coinQuantity), price=str(pricePerCoin), side=self.TradeSide, type='exchange limit', options=ORDER_OPTIONS)  #API call        
-            print("purchase order result: " + str(result))
+            print("trade order result: " + str(result))
         except Exception as e:
             print("Error: " + str(e) + " Traceback: " + str(traceback.print_tb(e.__traceback__)))
             time.sleep(60)       
@@ -252,10 +254,13 @@ class GeminiTradeDCAPostOnly:
         #todo: refactor
         if(self.TradeSide=="buy"):
             if(pricePerCoin > self.HardMaximumCoinPrice):   #BUY, check that price not above max
-                raise AssertionError("order price greater than configured maximum")
+                print("Order price greater than configured maximum, not doing a trade.")
+                return
         elif(self.TradeSide=="sell"):
             if(pricePerCoin < self.HardMinimumCoinPrice):   #SELL, check that price not below minimum
-                raise AssertionError("order price less than configured minimum")
+                #raise AssertionError("order price less than configured minimum")
+                print("Order price less than configured minimum, not doing a trade.")
+                return
         else:
             raise ValueError('invalid TradeSide')
         

@@ -61,7 +61,7 @@ class clientOrderIdObj:
         
     def getOrderDateTimeFromOrderId(self):
         stringParts = self.str_client_order_id.split('|')
-        return datetime.datetime.strptime(stringParts[1].replace(_order_id_prefix,"",1),ORDER_ID_DATE_FORMAT)
+        return datetime.datetime.strptime(stringParts[1].replace(self.order_id_prefix,"",1),ORDER_ID_DATE_FORMAT)
 
     def getAttemptNumberFromOrderId(self):
         stringParts = self.str_client_order_id.split('|')

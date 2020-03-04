@@ -70,8 +70,7 @@ class GeminiBuyDCAPostOnly(geminiTradeDCAPostOnly.GeminiTradeDCAPostOnly):
         self.ChanceToProceedOnOrderPerTick = _ChanceToProceedOnOrderPerTick  #this value adds a random delay to purchases to mitigate exact timing prediction by an adversary
         self.DesiredDiscount = _DesiredDiscount  #uses a lower purchase price based on percent value.  The more the discount, the less likely the purchase will go through soon (or at all).
         self.HardMaximumCoinPrice = float(_HardMaximumCoinPrice)
-        #self.ProcessActiveOrdersFrequencyPerDay = (24*(60/5))  #every 5 minutes   #TODO: UNCOMMENT
-        self.ProcessActiveOrdersFrequencyPerDay = (24*(60/1))  #every 5 minutes     #TODO: REMOVE STUB
+        self.ProcessActiveOrdersFrequencyPerDay = (24*(60/5))  #every 5 minutes
         self.StartingProgressForFirstOrder = _StartingProgressForFirstOrder  #this value speeds up the first purchase after starting the program
         
         if((self.OrdersPerDay > 0) & (self.OrderQuantityPerDayInFiat > 0)):

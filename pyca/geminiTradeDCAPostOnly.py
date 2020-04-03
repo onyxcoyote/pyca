@@ -93,6 +93,7 @@ class GeminiTradeDCAPostOnly:
                 orderId = order["id"]
                 print(" orderId:" + orderId)
                 clientOrderId = clientOrderIdObj.clientOrderIdObj(self.getOrderIdPrefix(), str(order["client_order_id"]))
+                print(" prefix: " + clientOrderId.order_id_prefix)
                 print(" clientOrderId: " + clientOrderId.getOrderId())
                 print(" price: " + str(order["price"]))
                 print(" remaining amount: " + str(order["remaining_amount"]))
@@ -177,7 +178,7 @@ class GeminiTradeDCAPostOnly:
     def resubmitTrade(self, _orderObj):
         
         orderId = _orderObj["id"]
-        clientOrderId = clientOrderIdObj.clientOrderIdObj(str(_orderObj["client_order_id"]))
+        clientOrderId = clientOrderIdObj.clientOrderIdObj(self.getOrderIdPrefix(), str(_orderObj["client_order_id"]))
         oldOrderDateTime = clientOrderId.getOrderDateTimeFromOrderId()
         
         #cancel order
@@ -192,8 +193,11 @@ class GeminiTradeDCAPostOnly:
         if(clientOrderId.attemptNumber >= 12):  #reduce discount/premium to exactly 0, because it's practically the same as 0 anyway, and would have a better chance of successful trade
             discount = 0
         else:
-            discount = (self.DesiredPremium/clientOrderId.attemptNumber)
-        
+            if(self.TradeSide=="buy"):
+                discount = (self.DesiredDiscount/clientOrderId.attemptNumber) #Buying subtracts desired discount
+            elif(self.TradeSide=="sell"):
+                discount = (self.DesiredPremium/clientOrderId.attemptNumber) #Selling adds desired premium
+            
         #get price
         lastValueCostPerCoin = self.getPrice()
         

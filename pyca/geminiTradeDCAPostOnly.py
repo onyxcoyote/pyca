@@ -35,18 +35,35 @@ class GeminiTradeDCAPostOnly:
             return geminiAPIHelper.getTickerAsk(self)
         else:
             raise ValueError('invalid TradeSide')
-    
 
-    def getPriceAfterDiscountOrPremium(self):
+            
+    def getPremiumByAttemptNumber(self, _attemptNumber):
+
+        if(_attemptNumber >= 12):
+            return 0  #reduce discount/premium to exactly 0, because it's practically the same as 0 anyway, and would have a better chance of successful trade
+        elif(self.TradeSide=="buy"):
+            #note that negative premium is the same as a discount
+            return = -(self.DesiredDiscount/_attemptNumber) #Buying subtracts desired discount                                                                                                                          
+        elif(self.TradeSide=="sell"):                                                                                                                                                                                                 
+            return = (self.DesiredPremium/_attemptNumber) #Selling adds desired premium                                                                                                                                
+        else:
+            raise ValueError('invalid TradeSide')                                                                                                              
+    
+    
+    #typical value for a premium might be between 0.0 and 0.10 (for a sell) or 0.0 and -0.10 (for a buy), 0 would hopefully be an "immediate" buy or sell, whereas a number farther from 0 looks for a better price at the cost of a longer wait
+    def getPriceAfterDiscountOrPremium(self, _premium):
         
         valueCostPerCoin = self.getPrice()
+        return valueCostPerCoin * (1.0000+_premium)  #on Sell side, premium adds a value to try to sell at a better price. On the buy side, subtracts desired discount by using a negative premium
         
-        if(self.TradeSide=="buy"):
-            return valueCostPerCoin * (1.0000-self.DesiredDiscount)  #Buying subtracts desired discount
-        elif(self.TradeSide=="sell"):
-            return valueCostPerCoin * (1.0000+self.DesiredPremium)   #Selling adds desired premium
-        else:
-            raise ValueError('invalid TradeSide')
+        #example:
+        #if(self.TradeSide=="buy"):
+            #return valueCostPerCoin * (1.0000-self.DesiredDiscount)  #Buying subtracts desired discount
+        #elif(self.TradeSide=="sell"):
+            #return valueCostPerCoin * (1.0000+self.DesiredPremium)   #Selling adds desired premium
+        #else:
+            #raise ValueError('invalid TradeSide')
+        
     
     
     #TODO: this could go to a generic gemini rule
@@ -189,21 +206,13 @@ class GeminiTradeDCAPostOnly:
         clientOrderId.incrementAttemptNumber()
         clientOrderId.resetOrderDateTime()
         
-        #calculate new discount
-        if(clientOrderId.attemptNumber >= 12):  #reduce discount/premium to exactly 0, because it's practically the same as 0 anyway, and would have a better chance of successful trade
-            discount = 0
-        else:
-            if(self.TradeSide=="buy"):
-                discount = (self.DesiredDiscount/clientOrderId.attemptNumber) #Buying subtracts desired discount
-            elif(self.TradeSide=="sell"):
-                discount = (self.DesiredPremium/clientOrderId.attemptNumber) #Selling adds desired premium
-            
-        #get price
-        lastValueCostPerCoin = self.getPrice()
         
-        pricePerCoin = lastValueCostPerCoin * (1.0000-discount) 
+        #calculate new price ask or bid
+        premium = self.getPremiumByAttemptNumber(clientOrderId.attemptNumber)
+        pricePerCoin = self.getPriceAfterDiscountOrPremium(premium)
+                    
         pricePerCoin = round(pricePerCoin,2)
-        print("bid/ask price:" + str(pricePerCoin) + " discount/premium: " + str(discount) + " attemptNumber:" + str(clientOrderId.attemptNumber) )
+        print("bid/ask price:" + str(pricePerCoin) + " premium: " + str(premium) + " attemptNumber:" + str(clientOrderId.attemptNumber) )
         
         
         #todo: refactor, duplicate of buy method
@@ -218,8 +227,6 @@ class GeminiTradeDCAPostOnly:
         else:
             raise ValueError('invalid TradeSide')
         
-        
-                
         #get old quantity in fiat
         _quantityInFiat = float(_orderObj["remaining_amount"]) * float(_orderObj["price"])
                 
@@ -250,7 +257,8 @@ class GeminiTradeDCAPostOnly:
         clientOrderId=clientOrderIdObj.clientOrderIdObj(self.getOrderIdPrefix())
         print(" orderId:"+clientOrderId.getOrderId())
         
-        pricePerCoin = self.getPriceAfterDiscountOrPremium()
+        premium = self.getPremiumByAttemptNumber(0)
+        pricePerCoin = self.getPriceAfterDiscountOrPremium(premium)
         
         pricePerCoin = round(pricePerCoin,2)
         print(" using trade price: " + str(pricePerCoin))

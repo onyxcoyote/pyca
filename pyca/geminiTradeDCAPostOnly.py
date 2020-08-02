@@ -257,7 +257,7 @@ class GeminiTradeDCAPostOnly:
         clientOrderId=clientOrderIdObj.clientOrderIdObj(self.getOrderIdPrefix())
         print(" orderId:"+clientOrderId.getOrderId())
         
-        premium = self.getPremiumByAttemptNumber(0)
+        premium = self.getPremiumByAttemptNumber(1)
         pricePerCoin = self.getPriceAfterDiscountOrPremium(premium)
         
         pricePerCoin = round(pricePerCoin,2)

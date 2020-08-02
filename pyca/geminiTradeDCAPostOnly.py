@@ -42,10 +42,10 @@ class GeminiTradeDCAPostOnly:
         if(_attemptNumber >= 12):
             return 0  #reduce discount/premium to exactly 0, because it's practically the same as 0 anyway, and would have a better chance of successful trade
         elif(self.TradeSide=="buy"):
-            #note that negative premium is the same as a discount
-            return = -(self.DesiredDiscount/_attemptNumber) #Buying subtracts desired discount                                                                                                                          
+            #note that NEGATIVE premium is the same as a discount
+            return -(self.DesiredDiscount/_attemptNumber) #Buying subtracts desired discount                                                                                                                          
         elif(self.TradeSide=="sell"):                                                                                                                                                                                                 
-            return = (self.DesiredPremium/_attemptNumber) #Selling adds desired premium                                                                                                                                
+            return (self.DesiredPremium/_attemptNumber) #Selling adds desired premium                                                                                                                                
         else:
             raise ValueError('invalid TradeSide')                                                                                                              
     

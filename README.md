@@ -111,9 +111,9 @@ If parameters are changed in the pyca.cfg file, the program would need to be sto
 ##8. secure pyca.cfg
 
 Since pyca.cfg contains api keys, it should be kept protected.  The recommended file permissions on pyca.cfg are 400, so only the user executing the program has access to read it.
-...
+```
 chmod 400 pyca.cfg
-...
+```
 
 #UNINSTALL
 ------------

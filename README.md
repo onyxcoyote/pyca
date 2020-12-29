@@ -10,7 +10,7 @@ Dollar-cost-average bitcoin buying bot for gemini, features:
 3. configurable frequencies and amounts or purchase
 4. configurable maximum coin price above which it will not buy
 5. adds a random delay to purchase times to help mitigate adversaries predicting exact purchase times
-6. there is a hardcoded maximum value spent per day in fiat, currently 100 fiat units per day, to help mitigate against accidentally spending more than desired on cryptocurrency purchased.  This can be changed directly in the code if desired.
+6. there is a hardcoded maximum value spent per day in fiat, currently 500 fiat units per day (e.g. 500 USD), to help mitigate against accidentally spending more than desired on cryptocurrency purchased.  This can be changed directly in the code if desired.
 
 
 NOTE: This program is meant to be run on a computer or server that is generally up most of the time (because the purchase timer resets in the case of a machine reboot), and for security purposes that computer would be dedicated to running this program.
@@ -108,6 +108,12 @@ TODO: add pyca.service example
 If parameters are changed in the pyca.cfg file, the program would need to be stopped and re-started.
 
 
+##8. secure pyca.cfg
+
+Since pyca.cfg contains api keys, it should be kept protected.  The recommended file permissions on pyca.cfg are 400, so only the user executing the program has access to read it.
+...
+chmod 400 pyca.cfg
+...
 
 #UNINSTALL
 ------------

@@ -231,7 +231,12 @@ class GeminiTradeDCAPostOnly:
         _quantityInFiat = float(_orderObj["remaining_amount"]) * float(_orderObj["price"])
                 
         #determine coin trade quantity
-        coinQuantity = round(_quantityInFiat / pricePerCoin,8)  #assume 8 decimal places is max resolution on coin quantity
+        if(self.TradeSymbol=="btcusd"):
+            coinQuantity = round(_quantityInFiat / pricePerCoin,8)  #assume 8 decimal places is max resolution on coin quantity
+        elif(self.TradeSymbol=="ethusd"):
+            coinQuantity = round(_quantityInFiat / pricePerCoin,6)  # assume 6 decimal places is max resolution on coin quantity
+        else:
+            raise ValueError('invalidQuantity')
         print("coinQuantity:" + str(coinQuantity))
         
         if(coinQuantity < 0.00001):
@@ -240,7 +245,7 @@ class GeminiTradeDCAPostOnly:
             return
         
         try:
-            result = __main__.geminiClient.client.new_order(client_order_id=clientOrderId.getOrderId(), symbol=self.TradeSymbol, amount=str(coinQuantity), price=str(pricePerCoin), side=self.TradeSide, type='exchange limit', options=ORDER_OPTIONS)  #API call        
+            result = __main__.geminiClient.client.new_order(client_order_id=clientOrderId.getOrderId(), symbol=self.TradeSymbol, amount=str(round(coinQuantity, 6)), price=str(pricePerCoin), side=self.TradeSide, type='exchange limit', options=ORDER_OPTIONS)  #API call
             print("trade order result: " + str(result))
         except Exception as e:
             print("Error: " + str(e) + " Traceback: " + str(traceback.print_tb(e.__traceback__)))
@@ -279,7 +284,7 @@ class GeminiTradeDCAPostOnly:
 
                 
         #determine coin order quantity
-        coinQuantity = round(_quantityInFiat / pricePerCoin,8)  #assume 8 decimal places is max resolution on coin quantity
+        coinQuantity = round(_quantityInFiat / pricePerCoin,6)  #assume 8 decimal places is max resolution on coin quantity
         print(" coinQuantity:" + str(coinQuantity))
         
         if(coinQuantity < 0.00001): #todo: configure from gemini settings

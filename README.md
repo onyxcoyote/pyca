@@ -100,7 +100,26 @@ NOTE: ideally set the program as a service so it runs automatically on startup
 
 
 ##6b. run program automatically on startup using systemd, for example
-TODO: add pyca.service example 
+```
+/etc/systemd/system/pyca.service
+```
+```
+[Unit]
+Description=pyca
+
+[Service]
+WorkingDirectory=/srv/pyca/
+ExecStart=/usr/local/bin/python3 /srv/pyca
+Restart=always
+RestartSec=45
+StandardOutput=file:/var/log/pyca.log
+StandardError=file:/var/log/pyca_error.log
+SyslogIdentifier=pyca
+
+[Install]
+WantedBy=multi-user.target
+
+```
 
 
 ##7. changing parameters

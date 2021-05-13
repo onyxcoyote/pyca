@@ -92,10 +92,12 @@ class GeminiBuyDCAPostOnly(geminiTradeDCAPostOnly.GeminiTradeDCAPostOnly):
         if((self.OrdersPerDay < 0.0) | (self.OrdersPerDay > 7200.0)):
             raise ValueError('invalid value for GeminiBuyDCAPostOnly.OrdersPerDay')
     
-        if((self.OrderQuantityPerDayInFiat < 0.00) | (self.OrderQuantityPerDayInFiat > 500.00)):   #temporary maximum purchase per day in fiat of 500 fiat units (e.g. 500 USD)
+        if(self.OrderQuantityPerDayInFiat < 0.00):
             raise ValueError('invalid value for GeminiBuyDCAPostOnly.OrderQuantityPerDayInFiat')
-        
-        if(self.TradeSymbol != "btcusd"):
+        elif(self.OrderQuantityPerDayInFiat < self.HardMaximumQuantityPerDayInFiat):
+            raise ValueError('Hard Maximum Quantity Per Day in Fiat exceeded')
+
+        if(self.TradeSymbol not in ["ethusd", "btcusd"]):
             raise ValueError('invalid value for GeminiBuyDCAPostOnly.TradeSymbol')
         
         if((self.MaxDaysCatchup < 1.0) | (self.MaxDaysCatchup > 20.0)):

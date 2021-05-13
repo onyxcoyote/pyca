@@ -1,7 +1,7 @@
 #What it does
 ------------
-Dollar-cost-average cryptocurency buying bot for gemini, features:
-1. does periodic buys using only maker orders (fees for API maker orders on gemini are 0.1%, as of May 2021)
+Dollar-cost-average bitcoin buying bot for gemini, features:
+1. does periodic buys using only maker orders (fees for API maker orders on gemini are 0.1%, as of August 2019)
 2. to try to get the best price, it starts at a lower price (configurable) and gradually increases price (at a configurable time frame) by resubmitting and gradually higher price up to the current best bid
 
 	a. refreshes in relation to the current bid (in case of price going up and trade not executing) 
@@ -10,7 +10,7 @@ Dollar-cost-average cryptocurency buying bot for gemini, features:
 3. configurable frequencies and amounts or purchase
 4. configurable maximum coin price above which it will not buy
 5. adds a random delay to purchase times to help mitigate adversaries predicting exact purchase times
-6. there is a configurable maximum value spent per day in fiat, set by default to 500 fiat units per day (e.g. 500 USD), to help mitigate against accidentally spending more than desired on cryptocurrency purchased.  This can be changed in the configuration file if desired.
+6. there is a hardcoded maximum value spent per day in fiat, currently 500 fiat units per day (e.g. 500 USD), to help mitigate against accidentally spending more than desired on cryptocurrency purchased.  This can be changed directly in the code if desired.
 7. can do automatic sells of cryptocurrency too
 
 NOTE: This program is meant to be run on a computer or server that is generally up most of the time (because the purchase timer resets in the case of a machine reboot), and for security purposes that computer would be dedicated to running this program.
@@ -19,11 +19,12 @@ NOTE: This program is meant to be run on a computer or server that is generally 
 #INSTALLATION
 ------------
 
-##1. Install python3 and pip3:
+##1. INSTALL PYTHON3 and PIP3
 
 ###example debian
 ```
-sudo apt-get install python3 python3-pip
+apt-get install python3
+apt-get install python3-pip
 ```
 
 ###example centos7
@@ -33,52 +34,82 @@ yum install rh-python36-python
 scl enable rh-python36 bash
 ```
 
-##2. Clone repository:
+##2a (either 2a or 2b). INSTALL PYTHON LIBRARIES (DIFFICULT WAY)
 ```
-git clone https://github.com/151henry151/pyca.git
+cd /tmp
+mkdir pycabuild
+cd pycabuild
 ```
 
-##3 Create a virtual environment (venv) and install python libraries:
+###checkout a specific release of libraries to help mitigate against dependency attacks (v2.21.0)
 ```
-cd pyca
-python3 -m venv venv
-source venv/bin/activate
+cd /tmp/pycabuild
+git clone https://github.com/kennethreitz/requests.git
+cd requests
+git fetch origin 5a1e738ea9c399c3f59977f2f98b083986d6037a 
+git reset --hard FETCH_HEAD
+pip3 install .
+```
+
+###checkout a specific release of libraries to help mitigate against dependency attacks (last checkin as of 2/9/2018)
+```
+cd /tmp/pycabuild
+git clone https://github.com/mattselph/gemini-python-unoffc.git
+cd gemini-python-unoffc
+git fetch origin 684ae57b2c36cd96739e2b0d15db94ed6e27bba4
+git reset --hard FETCH_HEAD
+pip3 install .
+```
+
+##2b (either 2a or 2b). INSTALL PYTHON DEPENDECIES (EASY WAY)
+```
 pip3 install gemini-python-unoffc requests chardet urllib3 idna certifi
 ```
-NOTE: see https://docs.python.org/3/library/venv.html for more information on creation and use of virtual environments. To exit the virtual environment run ```deactivate```
 
-##4. Run program to generate a blank config file (pyca.cfg):
+
+##3. SET UP THIS PROGRAM
+###download repository
+###e.g.
 ```
-python3 pyca
+cd /tmp/pycabuild
+git clone https://github.com/onyxcoyote/pyca.git
 ```
 
-##5. Copy example.cfg to pyca.cfg:
+##4. copy all *.py files to the install location
 ```
-cp example.cfg pyca.cfg
+mkdir /srv/pyca
+cp /tmp/pycabuild/pyca/*.py /srv/pyca
+cd /srv/pyca
 ```
-##5a. Update parameters in pyca.cfg: 
+
+##5. run program to generate a blank config file (pyca.cfg)
+update parameters in pyca.cfg:
 	api_key/api_secret from gemini, needs trading permissions.  Do not require session heartbeat.
 	leave is_sandbox as True for testing (gemini sandbox) or change to False to trade with actual money
 	update other settings as desired
 
 
 
-##6. running program manually:
+##6a. run program manually
 ```
-source venv/bin/activate
-python3 pyca
+cd /srv/pyca
+python3 .
 ```
-If everything runs correctly, then you can go ahead and create a system service to run the program automatically on system startup and restart it if interrupted:
+
+NOTE: ideally set the program as a service so it runs automatically on startup
 
 
-##6b. run program automatically on startup using systemd by creating this file in /etc/systemd/system/pyca.service:
+##6b. run program automatically on startup using systemd, for example
+```
+/etc/systemd/system/pyca.service
+```
 ```
 [Unit]
 Description=pyca
 
 [Service]
-WorkingDirectory=/home/username/pyca/
-ExecStart=/home/username/pyca/venv/bin/python3 /home/username/pyca
+WorkingDirectory=/srv/pyca/
+ExecStart=/usr/local/bin/python3 /srv/pyca
 Restart=always
 RestartSec=45
 StandardOutput=file:/var/log/pyca.log
@@ -89,11 +120,11 @@ SyslogIdentifier=pyca
 WantedBy=multi-user.target
 
 ```
-Note that this example service file assumes you are using a virtualenv, if not you can modify the first path in ExecStart to point at your python3 binary.
+
 
 ##7. changing parameters
 
-If parameters are changed in the pyca.cfg file, the program would need to be stopped and re-started. If you are running the program automatically with systemd as described in 6b, ```systemctl restart pyca.service```
+If parameters are changed in the pyca.cfg file, the program would need to be stopped and re-started.
 
 
 ##8. secure pyca.cfg
